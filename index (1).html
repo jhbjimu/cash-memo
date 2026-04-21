@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>現金出納帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f7f2e8;
+    --paper: #fdf9f2;
+    --ink:   #1e1810;
+    --sepia: #7a6448;
+    --line:  #c8b89a;
+    --red:   #c0392b;
+    --navy:  #1a3a5c;
+    --gold:  #a07840;
+    --green: #2d6a4f;
+    --bg-btn: #f0ead8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100svh;
+    background: var(--cream);
+    background-image:
+      radial-gradient(ellipse at 20% 10%, #e8dcc8 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, #ddd0bc 0%, transparent 50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 16px 48px;
+    font-family: 'BIZ UDPGothic', 'BIZ UDGothic', sans-serif;
+  }
+
+  /* ── Envelope card ── */
+  .envelope {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 36px 28px 40px;
+    box-shadow:
+      0 2px 0 #c8b89a,
+      0 8px 32px rgba(90,60,20,.13),
+      inset 0 0 60px rgba(255,248,235,.6);
+  }
+  .envelope::before, .envelope::after,
+  .envelope .corner-br, .envelope .corner-bl {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    border-color: var(--line); border-style: solid;
+  }
+  .envelope::before  { top: 10px; left: 10px;  border-width: 1px 0 0 1px; }
+  .envelope::after   { top: 10px; right: 10px; border-width: 1px 1px 0 0; }
+  .envelope .corner-br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+  .envelope .corner-bl { bottom: 10px; left: 10px;  border-width: 0 0 1px 1px; }
+
+  /* ── Stamp ── */
+  .stamp-area {
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 60px; height: 60px;
+    border: 1.5px solid var(--line);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+  }
+  .stamp-label { font-size: 8px; color: var(--sepia); letter-spacing: .1em; }
+  .stamp-date  { font-size: 11px; color: var(--ink); font-weight: 700;
+                 text-align: center; line-height: 1.4; }
+
+  /* ── Header ── */
+  .header {
+    text-align: center; margin-bottom: 16px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .header::after {
+    content: ''; position: absolute;
+    bottom: 3px; left: 20%; right: 20%;
+    height: 1px; background: var(--line); opacity: .5;
+  }
+  .header-sub  { font-size: 9px; letter-spacing: .3em; color: var(--sepia); margin-bottom: 4px; }
+  .header-main { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: .12em; }
+
+  /* ── 残額パネル ── */
+  .balance-panel {
+    text-align: center; padding: 12px 0 16px;
+    margin-bottom: 18px; border-bottom: 1px solid var(--line);
+  }
+  .balance-label { font-size: 9px; letter-spacing: .3em; color: var(--sepia); margin-bottom: 6px; }
+  .balance-amount {
+    font-size: 32px; font-weight: 700; color: var(--ink);
+    transition: color .3s;
+  }
+  .balance-amount.positive { color: var(--green); }
+  .balance-amount.negative { color: var(--red); }
+  .balance-amount.pop { animation: balancePop .35s ease-out; }
+  @keyframes balancePop {
+    0%   { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /* ── 日付・メモ ── */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 10px;
+    letter-spacing: .2em; color: var(--sepia); margin-bottom: 6px;
+  }
+  .field input[type="date"],
+  .field input[type="text"] {
+    width: 100%; background: transparent;
+    border: none; border-bottom: 1px solid var(--line);
+    padding: 5px 2px 7px; font-family: inherit;
+    font-size: 15px; color: var(--ink); outline: none;
+    transition: border-color .2s; -webkit-appearance: none;
+  }
+  .field input:focus { border-bottom-color: var(--gold); }
+
+  /* ── 金種セクション ── */
+  .denom-section {
+    margin-bottom: 18px;
+  }
+  .denom-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .denom-title {
+    font-size: 10px; letter-spacing: .2em; color: var(--sepia);
+  }
+  .denom-total-label {
+    font-size: 10px; color: var(--sepia); letter-spacing: .05em;
+  }
+  .denom-total-val {
+    font-size: 20px; font-weight: 700; color: var(--ink);
+    letter-spacing: .03em;
+  }
+  .denom-total-val.has-amount { color: var(--navy); }
+
+  /* ── 金種グリッド ── */
+  .denom-grid {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .denom-row {
+    display: grid;
+    grid-template-columns: 68px 1fr auto auto auto;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    transition: background .15s;
+  }
+  .denom-row.has-count { background: rgba(26,58,92,.06); }
+
+  .denom-name {
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    text-align: right; padding-right: 4px;
+    white-space: nowrap;
+  }
+  .denom-bar {
+    height: 4px; background: var(--line); border-radius: 2px;
+    overflow: hidden;
+  }
+  .denom-bar-fill {
+    height: 100%; background: var(--navy);
+    border-radius: 2px; transition: width .2s;
+    width: 0%;
+  }
+  .denom-count {
+    font-size: 15px; font-weight: 700; color: var(--navy);
+    min-width: 26px; text-align: center;
+  }
+  .denom-count.zero { color: var(--line); }
+  .denom-unit { font-size: 10px; color: var(--sepia); }
+
+  .btn-pm {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: var(--bg-btn);
+    color: var(--ink);
+    font-size: 18px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    transition: all .12s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-pm:active { transform: scale(.88); }
+  .btn-pm.btn-plus  { border-color: var(--navy); color: var(--navy); }
+  .btn-pm.btn-minus { border-color: var(--sepia); color: var(--sepia); }
+  .btn-pm.btn-minus:disabled { opacity: .3; cursor: default; }
+
+  /* リセット */
+  .btn-reset {
+    display: block; margin: 8px auto 0;
+    font-family: inherit; font-size: 10px;
+    letter-spacing: .2em; color: var(--sepia);
+    background: none; border: none; cursor: pointer;
+    text-decoration: underline dotted;
+    padding: 4px 8px;
+  }
+
+  /* ── 入出金 toggle ── */
+  .field-type { margin-bottom: 20px; }
+  .toggle-wrap { display: flex; border: 1px solid var(--line); }
+  .toggle-btn {
+    flex: 1; padding: 12px 0;
+    font-family: inherit; font-size: 14px;
+    letter-spacing: .2em; border: none;
+    background: transparent; cursor: pointer;
+    color: var(--sepia); transition: all .18s;
+    font-weight: 700;
+  }
+  .toggle-btn.active-in  { background: var(--red);  color: #fff; }
+  .toggle-btn.active-out { background: var(--navy); color: #fff; }
+  .toggle-btn + .toggle-btn { border-left: 1px solid var(--line); }
+
+  /* ── Hanko ── */
+  .submit-area {
+    margin-top: 24px; display: flex;
+    flex-direction: column; align-items: center; gap: 10px;
+  }
+  .hanko {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 2.5px solid var(--red); background: transparent;
+    color: var(--red); font-family: inherit;
+    font-size: 13px; font-weight: 700; letter-spacing: .12em;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .18s;
+  }
+  .hanko:hover  { background: var(--red); color: #fff; }
+  .hanko:active { transform: scale(.94); }
+  .hanko.stamped {
+    background: var(--red); color: #fff;
+    animation: stamp .25s ease-out;
+  }
+  @keyframes stamp {
+    0%   { transform: scale(1.3); opacity: .7; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  .submit-label { font-size: 9px; letter-spacing: .25em; color: var(--sepia); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--cream);
+    font-size: 12px; letter-spacing: .15em;
+    padding: 10px 24px; border-radius: 2px;
+    opacity: 0; pointer-events: none; transition: opacity .3s;
+    white-space: nowrap; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── Overlay ── */
+  .overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(247,242,232,.75);
+    align-items: center; justify-content: center;
+    font-size: 13px; letter-spacing: .2em; color: var(--sepia);
+    z-index: 99;
+  }
+  .overlay.active { display: flex; }
+  .spin {
+    width: 24px; height: 24px;
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    border-radius: 50%; animation: spin 1s linear infinite; margin-right: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="envelope">
+  <div class="corner-br"></div>
+  <div class="corner-bl"></div>
+
+  <div class="stamp-area">
+    <span class="stamp-label">年月日</span>
+    <div class="stamp-date" id="stampDate">—</div>
+  </div>
+
+  <div class="header">
+    <div class="header-sub">CASH MEMO</div>
+    <div class="header-main">現金出納帳</div>
+  </div>
+
+  <!-- 残額 -->
+  <div class="balance-panel">
+    <div class="balance-label">現　在　残　額</div>
+    <div class="balance-amount" id="balanceDisplay">読み込み中…</div>
+  </div>
+
+  <!-- 日付 -->
+  <div class="field">
+    <label>日　付</label>
+    <input type="date" id="fDate">
+  </div>
+
+  <!-- 摘要 -->
+  <div class="field">
+    <label>摘　要</label>
+    <input type="text" id="fMemo" placeholder="内容を記入">
+  </div>
+
+  <!-- 金種 -->
+  <div class="denom-section">
+    <div class="denom-header">
+      <span class="denom-title">金　種　入　力</span>
+      <span>
+        <span class="denom-total-label">合計　</span>
+        <span class="denom-total-val" id="denomTotal">¥0</span>
+      </span>
+    </div>
+    <div class="denom-grid" id="denomGrid"></div>
+    <button class="btn-reset" onclick="resetDenom()">リセット</button>
+  </div>
+
+  <!-- 入出金 -->
+  <div class="field-type">
+    <div class="toggle-wrap">
+      <button class="toggle-btn active-in" id="btnIn"  onclick="setType('in')">入　金</button>
+      <button class="toggle-btn"           id="btnOut" onclick="setType('out')">出　金</button>
+    </div>
+  </div>
+
+  <!-- 記帳 -->
+  <div class="submit-area">
+    <button class="hanko" id="hankoBtn" onclick="submitEntry()">記　帳</button>
+    <span class="submit-label">押印して記帳</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="spin"></div>送信中…</div>
+
+<script>
+// ─────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxq8zt-52vz_fLqwIH6YzCgo8VdDCdJKUoNjBvU_J7Lf5tC7voP0oYwVxgAJB_XAaGc/exec';
+// ─────────────────────────────────────────────
+
+const DENOMS = [
+  { val: 10000, label: '1万円',  unit: '枚' },
+  { val:  5000, label: '5千円',  unit: '枚' },
+  { val:  2000, label: '2千円',  unit: '枚' },
+  { val:  1000, label: '千円',   unit: '枚' },
+  { val:   500, label: '500円',  unit: '枚' },
+  { val:   100, label: '100円',  unit: '枚' },
+  { val:    50, label: '50円',   unit: '枚' },
+  { val:    10, label: '10円',   unit: '枚' },
+  { val:     5, label: '5円',    unit: '枚' },
+  { val:     1, label: '1円',    unit: '枚' },
+];
+
+let counts = DENOMS.map(() => 0);
+let currentType    = 'in';
+let currentBalance = 0;
+
+// ── 初期化 ──────────────────────────────────
+(function init() {
+  const t = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('fDate').value =
+    `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
+  updateStamp();
+  buildGrid();
+  fetchBalance();
+})();
+
+document.getElementById('fDate').addEventListener('change', updateStamp);
+
+function updateStamp() {
+  const val = document.getElementById('fDate').value;
+  if (!val) { document.getElementById('stampDate').textContent = '—'; return; }
+  const d = new Date(val + 'T00:00:00');
+  document.getElementById('stampDate').innerHTML =
+    `${d.getMonth()+1}月<br>${d.getDate()}日`;
+}
+
+// ── 金種グリッド生成 ────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('denomGrid');
+  grid.innerHTML = '';
+  DENOMS.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'denom-row';
+    row.id = `row-${i}`;
+    row.innerHTML = `
+      <span class="denom-name">${d.label}</span>
+      <div class="denom-bar"><div class="denom-bar-fill" id="bar-${i}"></div></div>
+      <span class="denom-count zero" id="cnt-${i}">0</span>
+      <span class="denom-unit">${d.unit}</span>
+      <button class="btn-pm btn-minus" onclick="change(${i},-1)" id="minus-${i}" disabled>−</button>
+      <button class="btn-pm btn-plus"  onclick="change(${i},+1)">＋</button>
+    `;
+    grid.appendChild(row);
+  });
+}
+
+// ── カウント変更 ────────────────────────────
+function change(i, delta) {
+  counts[i] = Math.max(0, counts[i] + delta);
+  refreshRow(i);
+  refreshTotal();
+}
+
+function refreshRow(i) {
+  const c = counts[i];
+  const cntEl   = document.getElementById(`cnt-${i}`);
+  const minusEl = document.getElementById(`minus-${i}`);
+  const rowEl   = document.getElementById(`row-${i}`);
+  const barEl   = document.getElementById(`bar-${i}`);
+
+  cntEl.textContent = c;
+  cntEl.className   = 'denom-count' + (c === 0 ? ' zero' : '');
+  minusEl.disabled  = c === 0;
+  rowEl.className   = 'denom-row' + (c > 0 ? ' has-count' : '');
+
+  // bar: max表示は20枚基準
+  barEl.style.width = Math.min(c / 20 * 100, 100) + '%';
+}
+
+function refreshTotal() {
+  const total = calcTotal();
+  const el    = document.getElementById('denomTotal');
+  el.textContent = '¥\u202f' + total.toLocaleString('ja-JP');
+  el.className   = 'denom-total-val' + (total > 0 ? ' has-amount' : '');
+}
+
+function calcTotal() {
+  return DENOMS.reduce((sum, d, i) => sum + d.val * counts[i], 0);
+}
+
+function resetDenom() {
+  counts = DENOMS.map(() => 0);
+  DENOMS.forEach((_, i) => refreshRow(i));
+  refreshTotal();
+}
+
+// ── 残額 ────────────────────────────────────
+async function fetchBalance() {
+  if (GAS_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
+    renderBalance(0); return;
+  }
+  try {
+    const res  = await fetch(GAS_URL + '?action=balance', { mode: 'cors' });
+    const data = await res.json();
+    currentBalance = data.balance ?? 0;
+    renderBalance(currentBalance);
+  } catch {
+    document.getElementById('balanceDisplay').textContent = '—';
+  }
+}
+
+function renderBalance(n) {
+  currentBalance = n;
+  const el = document.getElementById('balanceDisplay');
+  el.className = 'balance-amount' + (n >= 0 ? ' positive' : ' negative');
+  el.textContent = (n < 0 ? '−' : '') + '¥\u202f' + Math.abs(n).toLocaleString('ja-JP');
+}
+
+function animateBalance(n) {
+  renderBalance(n);
+  const el = document.getElementById('balanceDisplay');
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+
+// ── 入出金切替 ──────────────────────────────
+function setType(t) {
+  currentType = t;
+  document.getElementById('btnIn').className  =
+    'toggle-btn' + (t === 'in'  ? ' active-in'  : '');
+  document.getElementById('btnOut').className =
+    'toggle-btn' + (t === 'out' ? ' active-out' : '');
+}
+
+// ── トースト ────────────────────────────────
+function toast(msg, ms = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ── 記帳 ────────────────────────────────────
+async function submitEntry() {
+  const date  = document.getElementById('fDate').value;
+  const memo  = document.getElementById('fMemo').value.trim();
+  const total = calcTotal();
+
+  if (!date)     { toast('⚠ 日付を入力してください'); return; }
+  if (total <= 0){ toast('⚠ 金種を入力してください'); return; }
+
+  const btn = document.getElementById('hankoBtn');
+  btn.classList.add('stamped');
+  setTimeout(() => btn.classList.remove('stamped'), 400);
+
+  // 金種の内訳オブジェクト
+  const denomBreakdown = {};
+  DENOMS.forEach((d, i) => {
+    if (counts[i] > 0) denomBreakdown[d.label] = counts[i];
+  });
+
+  const payload = {
+    date,
+    type:   currentType === 'in' ? '入金' : '出金',
+    amount: total,
+    memo:   memo || '（メモなし）',
+    denom:  denomBreakdown,
+    // 金種を個別カラムでも送る
+    d10000: counts[0], d5000: counts[1], d2000: counts[2],
+    d1000:  counts[3], d500:  counts[4], d100:  counts[5],
+    d50:    counts[6], d10:   counts[7], d5:    counts[8],
+    d1:     counts[9],
+  };
+
+  const delta = currentType === 'in' ? total : -total;
+
+  if (GAS_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
+    animateBalance(currentBalance + delta);
+    toast('✔ 記帳しました（デモ）');
+    resetDenom();
+    document.getElementById('fMemo').value = '';
+    return;
+  }
+
+  document.getElementById('overlay').classList.add('active');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    animateBalance(currentBalance + delta);
+    toast('✔ 記帳しました');
+    resetDenom();
+    document.getElementById('fMemo').value = '';
+  } catch {
+    toast('⚠ 送信に失敗しました');
+  } finally {
+    document.getElementById('overlay').classList.remove('active');
+  }
+}
+</script>
+</body>
+</html>
